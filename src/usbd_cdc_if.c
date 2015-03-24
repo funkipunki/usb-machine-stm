@@ -28,6 +28,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
 #include "usbd_desc.h"
+#include "usbd_core.h"
+
+extern USBD_HandleTypeDef hUSBDDevice;
 
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
@@ -72,6 +75,7 @@ static int8_t USR_Init     (void);
 static int8_t USR_DeInit   (void);
 static int8_t USR_Control  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
 static int8_t USR_Receive  (uint8_t* pbuf, uint32_t *Len);
+static USBD_StatusTypeDef USR_Transmit (uint8_t* Buf, uint16_t Len);
 
 USBD_CDC_ItfTypeDef USBD_CDC_Usr_fops =
 {
@@ -202,6 +206,11 @@ static int8_t USR_Control  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   return (0);
 }
 
+static USBD_StatusTypeDef USR_Transmit (uint8_t* Buf, uint16_t Len) {
+	USBD_LL_Transmit(&hUSBDDevice, CDC_IN_EP, Buf, Len);
+	return USBD_CDC_ReceivePacket(&hUSBDDevice);
+}
+
 /**
   * @brief  TEMPLATE_Receive
   *         Data received over USB OUT endpoint are sent over CDC interface 
@@ -220,8 +229,11 @@ static int8_t USR_Control  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t USR_Receive (uint8_t* Buf, uint32_t *Len)
 {
- 
-  return (0);
+	static uint8_t response[] = {0};
+	response[0]++;
+
+	USR_Transmit(response, 1);
+	return (0);
 }
 
 /**
